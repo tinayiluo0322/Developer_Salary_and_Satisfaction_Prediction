@@ -1,0 +1,1686 @@
+---
+format: pdf
+output:
+  pdf_document:
+    latex_engine: xelatex
+    keep_tex: true
+fontsize: 10 pt
+mainfont: "Times New Roman"
+geometry: margin=0.6in  # Adjust the margin size as needed
+header-includes:
+  - "\\usepackage{titling}"
+  - "\\pretitle{\\begin{center}\\fontsize{14pt}{16pt}\\selectfont\\fontfamily{ptm}\\selectfont}"
+  - "\\posttitle{\\par\\end{center}}"
+  - "\\usepackage{scrlayer-scrpage}"
+  - "\\addtokomafont{disposition}{\\rmfamily}"
+toc: false
+editor: visual
+---
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+#include=FALSE}
+library (tidyverse)
+data <- read.csv("survey_results_public.csv")
+
+# Counting the number of NA values 
+missing_count1 <- sum(is.na(data$Knowledge_1))
+missing_count2 <- sum(is.na(data$Knowledge_2))
+missing_count3 <- sum(is.na(data$Knowledge_3))
+missing_count4 <- sum(is.na(data$Knowledge_4))
+missing_count5 <- sum(is.na(data$Knowledge_5))
+missing_count6 <- sum(is.na(data$Knowledge_6))
+missing_count7 <- sum(is.na(data$Knowledge_7))
+missing_count8 <- sum(is.na(data$Knowledge_8))
+
+cat("Number of missing values in Knowledge_1:", missing_count1, "\n")
+cat("Number of missing values in Knowledge_2:", missing_count2, "\n")
+cat("Number of missing values in Knowledge_3:", missing_count3, "\n")
+cat("Number of missing values in Knowledge_4:", missing_count4, "\n")
+cat("Number of missing values in Knowledge_5:", missing_count5, "\n")
+cat("Number of missing values in Knowledge_6:", missing_count6, "\n")
+cat("Number of missing values in Knowledge_7:", missing_count7, "\n")
+cat("Number of missing values in Knowledge_8:", missing_count8, "\n")
+
+# Calculate the average missing value count
+average_missing_count <- mean(missing_count1,missing_count2,missing_count3)
+
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+#removing NA values
+data <- data[!is.na(data$Knowledge_1),]
+data <- data[!is.na(data$Knowledge_2),]
+data <- data[!is.na(data$Knowledge_3),]
+data <- data[!is.na(data$Knowledge_4),]
+data <- data[!is.na(data$Knowledge_5),]
+data <- data[!is.na(data$Knowledge_6),]
+data <- data[!is.na(data$Knowledge_7),]
+data <- data[!is.na(data$Knowledge_8),]
+
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+positive_map <- c("Strongly agree" = 5, 
+         "Agree" = 4,
+         "Neither agree nor disagree" = 3,
+         "Disagree" = 2,
+         "Strongly disagree" = 1)
+
+negative_map <- c("Strongly agree" = 1, 
+         "Agree" = 2,
+         "Neither agree nor disagree" = 3,
+         "Disagree" = 4,
+         "Strongly disagree" = 5)
+
+# Create the numeric Knowledge_1 variable
+data$Knowledge_1_num <- positive_map[data$Knowledge_1]
+data$Knowledge_2_num <- negative_map[data$Knowledge_2]
+data$Knowledge_3_num <- positive_map[data$Knowledge_3]
+data$Knowledge_4_num <- positive_map[data$Knowledge_4]
+data$Knowledge_5_num <- positive_map[data$Knowledge_5]
+data$Knowledge_6_num <- negative_map[data$Knowledge_6]
+data$Knowledge_7_num <- negative_map[data$Knowledge_7]
+data$Knowledge_8_num <- positive_map[data$Knowledge_8]
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Calculate row-wise means
+data$avg_score <- rowMeans(data[c("Knowledge_1_num", "Knowledge_2_num", "Knowledge_3_num", "Knowledge_4_num", "Knowledge_5_num", "Knowledge_6_num", "Knowledge_7_num", "Knowledge_8_num")])
+
+# Assuming 'data' is the original dataset
+data_copy <- data  # Creating a copy of the 'data' dataset
+
+# Calculating row means and adding a new column 'avg_score' to the copied dataset
+data_copy$avg_score <- rowMeans(data_copy[c("Knowledge_1_num", "Knowledge_2_num", "Knowledge_3_num", "Knowledge_4_num", "Knowledge_5_num", "Knowledge_6_num", "Knowledge_7_num", "Knowledge_8_num")])
+
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+summary(data$avg_score)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+library(ggplot2)
+
+# Create the histogram with grid lines
+ggplot(data, aes(x = avg_score)) +
+  geom_histogram(binwidth = 1, fill = "lightblue", color = "black") +
+  labs(
+    x = "Average Score",
+    y = "Frequency",
+    title = "Distribution of Average Scores For Job Satisfactions"
+  )
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+breaks <- c(1, 2.875, 3.625, 5) #Using as breaks the 1rs Qu and 3rd Qu
+labels <- c("Not satisfied", "Neutral", "Satisfied")
+
+# Cut avg_score into buckets and label
+data$JobSatisfaction <- cut(data$avg_score, 
+                          breaks = breaks,
+                          labels = labels)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+#Clean LanguageHaveWorkedWith column to get the numebr of languages
+library(stringr)
+
+# Create new column CodingLanguageNum
+data$CodingLanguageNum <- str_count(data$LanguageHaveWorkedWith, ";") + 1
+
+# If there are any NA or blank rows in the original column, set the count to 0 for those rows
+data$CodingLanguageNum[is.na(data$LanguageHaveWorkedWith) | data$LanguageHaveWorkedWith == ""] <- 0
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Summary statistics
+summary(data$CodingLanguageNum)
+
+# Histogram for visual representation
+hist(data$CodingLanguageNum, main="Distribution of Number of Coding Languages Known", 
+     xlab="Number of Languages", ylab="Frequency", col="skyblue", border="black")
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Frequency distribution/table
+language_counts <- table(data$CodingLanguageNum)
+print(language_counts)
+barplot(language_counts, main="Number of Individuals vs. Number of Languages Known", 
+        xlab="Number of Languages Known", ylab="Number of Individuals", col="lightblue", border="black")
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+### Only subsetting the variables we need
+new_data <- data[c("ConvertedCompYearly", "CodingLanguageNum", "Age" , "RemoteWork", "WorkExp", "YearsCodePro",  "EdLevel", "OrgSize","AISelect","JobSatisfaction")]
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Function to explore a column
+explore_column <- function(column) {
+  cat("===========================================\n")
+  cat("Exploring column:", column, "\n")
+  
+  # Check if the variable is numeric (continuous) or categorical
+  if (is.numeric(new_data[[column]]) || is.integer(new_data[[column]])) {
+    cat("Type: Numeric\n")
+    
+    # Display summary statistics
+    cat("Summary statistics:\n")
+    print(summary(new_data[[column]]))
+  } else {
+    cat("Type: Categorical\n")
+    
+    # Display unique values or levels
+    cat("Unique values/levels:\n")
+    print(table(new_data[[column]]))
+  }
+  cat("\n")
+}
+
+# Explore each column in the new_data dataframe
+for (column in names(new_data)) {
+  explore_column(column)
+}
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Replace the values
+new_data$YearsCodePro[new_data$YearsCodePro == "Less than 1 year"] <- 0.5
+new_data$YearsCodePro[new_data$YearsCodePro == "More than 50 years"] <- 51
+
+# Convert the column to numeric
+new_data$YearsCodePro <- as.numeric(as.character(new_data$YearsCodePro))
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+summary(new_data$YearsCodePro)
+table(new_data$YearsCodePro)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+library(dplyr)
+library(gtsummary)
+# Create a dataframe with clean variable name for table 1 visualization
+table_1_data <- new_data %>%
+  rename(
+    `Converted Yearly Compensation` = ConvertedCompYearly,
+    Age = Age,
+    `Remote Work` = RemoteWork,
+    `Years of Coding Experience Not Including Education` = YearsCodePro,
+    Education = EdLevel,
+    `Work Experience` = WorkExp,
+    `Number of Coding Languages` = CodingLanguageNum,
+    `Organization Size` = OrgSize,
+    `AI Usage` = AISelect,
+    `Job Satisfaction` = JobSatisfaction
+  )
+
+library(gtsummary)
+table_1_data %>% 
+  # Select the variables to be included in the table
+  select(`Converted Yearly Compensation`, Age, `Remote Work`, `Years of Coding Experience Not Including Education`, Education, `Work Experience`, `Number of Coding Languages`, `Organization Size`,`AI Usage`, `Job Satisfaction`) %>%
+  tbl_summary() %>%
+  as_gt() %>%
+  gt::tab_style(
+    style = gt::cell_text(size = "small"),
+    locations = gt::cells_body()
+  )
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+library(ggplot2)
+
+# Remove NA values from ConvertedCompYearly
+cleaned_data <- na.omit(new_data)
+
+# Calculate the 99.5th percentile threshold for the non-NA data
+salary_threshold <- quantile(cleaned_data$ConvertedCompYearly, 0.995)
+
+# Filter data to remove the top 0.5% of salaries
+filtered_data <- cleaned_data[cleaned_data$ConvertedCompYearly <= salary_threshold,]
+
+# Define breaks and labels for the x-axis
+breaks <- seq(0, salary_threshold, by = 50000)
+labels <- paste0(breaks/1000, "k")  # Add "k" suffix to labels
+
+ggplot(filtered_data, aes(x = ConvertedCompYearly)) +
+  geom_histogram(binwidth = 50000, boundary = 0, fill = "lightblue", color = "black") +
+  scale_x_continuous(breaks = breaks, labels = labels) +  # Set custom breaks and labels
+  labs(
+    x = "Yearly Salary (USD)",
+    y = "Frequency",
+    title = "Histogram of Yearly Salaries (Excluding Top 0.5% outliers)"
+  )
+
+
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+library(ggplot2)
+
+# Create the histogram with grid lines
+ggplot(data, aes(x = avg_score)) +
+  geom_histogram(binwidth = 1, fill = "lightblue", color = "black") +
+  labs(
+    x = "Average Score",
+    y = "Frequency",
+    title = "Distribution of Average Scores For Job Satisfactions"
+  )
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+library(ggplot2)
+library(dplyr)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Using Age as color line
+ggplot(new_data, aes(x = YearsCodePro, y = log(ConvertedCompYearly), col= Age)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Years of Coding Experience",
+       x = "Years of Coding Experience (excluding education)",
+       y = "Converted Yearly Compensation",
+       color = "Age") 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Using RemoteWork as color line
+ggplot(new_data, aes(x = YearsCodePro, y = log(ConvertedCompYearly), col = RemoteWork)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Years of Coding Experience",
+       x = "Years of Coding Experience (excluding education)",
+       y = "Converted Yearly Compensation",
+       color = "Remote Work") 
+
+# Using EdLevel as color line
+ggplot(new_data, aes(x = YearsCodePro, y = log(ConvertedCompYearly), col = EdLevel)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Years of Coding Experience",
+       x = "Years of Coding Experience (excluding education)",
+       y = "Converted Yearly Compensation",
+       color = "Education Level") 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Using RemoteWork as color line
+new_data$LogComp <- log(new_data$ConvertedCompYearly)
+ggplot(new_data, aes(x = WorkExp, y = log(ConvertedCompYearly), col = RemoteWork)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Work Experience",
+       x = "Work Experience (Years)",
+       y = "Converted Yearly Compensation",
+       color = "Remote Work") 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Using Age as color line
+ggplot(new_data, aes(x = WorkExp, y = log(ConvertedCompYearly), col= Age)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Work Experience",
+       x = "Work Experience (Years)",
+       y = "Converted Yearly Compensation",
+       color = "Age") 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Using RemoteWork as color line
+ggplot(new_data, aes(x = WorkExp, y = log(ConvertedCompYearly), col = RemoteWork)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Work Experience",
+       x = "Work Experience (Years)",
+       y = "Converted Yearly Compensation",
+       color = "Remote Work") 
+
+# Using EdLevel as color line
+ggplot(new_data, aes(x = WorkExp, y = log(ConvertedCompYearly), col = EdLevel)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Work Experience",
+       x = "Work Experience (Years)",
+       y = "Converted Yearly Compensation",
+       color = "Education Level") 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+
+# Using EdLevel as color line
+ggplot(new_data, aes(x = CodingLanguageNum, y = log(ConvertedCompYearly), col = EdLevel)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Number of Coding Languages",
+       x = "Number of Coding Languages",
+       y = "Converted Yearly Compensation",
+       color = "Education Level") 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Using RemoteWork as color line
+ggplot(new_data, aes(x = CodingLanguageNum, y = log(ConvertedCompYearly), col = RemoteWork)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Number of Coding Languages",
+       x = "Number of Coding Languages",
+       y = "Converted Yearly Compensation",
+       color = "Remote Work") 
+
+# Using Age as color line
+ggplot(new_data, aes(x = CodingLanguageNum, y = log(ConvertedCompYearly), col= Age)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Number of Coding Languages",
+       x = "Number of Coding Languages",
+       y = "Converted Yearly Compensation",
+       color = "Age") 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Function to explore a column
+explore_column <- function(column, data) {
+  cat("===========================================\n")
+  cat("Exploring column:", column, "\n")
+  
+  # Check if the variable is numeric (continuous) or categorical
+  if (is.numeric(data[[column]]) || is.integer(data[[column]])) {
+    cat("Type: Numeric\n")
+    
+    # Display summary statistics
+    cat("Summary statistics:\n")
+    print(summary(data[[column]]))  # Corrected this line
+    
+    # Create a histogram for numeric columns
+    hist(data[[column]], main = paste("Histogram of", column))
+  } else {
+    cat("Type: Categorical\n")
+    
+    # Display unique values/levels
+    cat("Unique values/levels:\n")
+    print(table(data[[column]]))
+    
+    # Create a bar plot for categorical columns
+    barplot(table(data[[column]]), main = paste("Bar Plot of", column))
+  }
+  cat("\n")
+}
+
+# Explore each column in the new_data dataframe
+for (column in names(new_data)) {
+  explore_column(column, new_data)
+}
+
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+#just some basic cleaning in the RemoteWork column for hybrid working, to make it better for visualization
+new_data$RemoteWork <- gsub("Hybrid \\(some remote, some in-person\\)", "Hybrid", new_data$RemoteWork)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+library(ggplot2)
+
+# Define the threshold for excluding salaries above 600k
+salary_threshold <- 600000
+
+# Remove rows with NA in JobSatisfaction and Age columns
+filtered_data <- na.omit(new_data[, c("ConvertedCompYearly", "JobSatisfaction", "Age")])
+
+# Create a scatterplot with outliers removed and customized x-axis labels
+p <- ggplot(filtered_data[filtered_data$ConvertedCompYearly <= salary_threshold, ], 
+       aes(x = ConvertedCompYearly, y = JobSatisfaction)) +
+  geom_point() +
+  facet_wrap(~Age) +
+  scale_x_continuous(labels = scales::comma, breaks = seq(0, salary_threshold, 100000)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Add labels and a title
+p + labs(
+  x = "Yearly Salary (USD)",
+  y = "Job Satisfaction",
+  title = "Relationship Between Yearly Salary and Job Satisfaction by Age"
+)
+
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+new_data$LogComp <- log(new_data$ConvertedCompYearly)
+ggplot(new_data, aes(x = JobSatisfaction, y = LogComp, fill = AISelect)) +
+  geom_boxplot() +
+  scale_fill_brewer(palette = "Set1") +
+  labs(
+    x = "Job Satisfaction",
+    y = "Log of Yearly Salary (LogComp)",
+    title = "Distribution of log of yearly salary (LogComp) by Job Satisfaction and AI Selection"
+  ) +
+  theme_minimal()
+
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+library(ggplot2)
+
+# Remove NA values from the RemoteWork variable
+new_data_cleaned <- na.omit(new_data)
+
+# Create the bar plot with a customized color palette and without NA values in RemoteWork
+ggplot(new_data_cleaned, aes(x = JobSatisfaction, fill = OrgSize)) +
+  geom_bar(position="stack") +
+  facet_wrap(~RemoteWork) +
+  scale_fill_brewer(palette="Set2", na.value = "transparent") +
+  labs(
+    x = "Job Satisfaction",
+    y = "Count",
+    fill = "Organization Size",
+    title = "Distribution of Job Satisfaction by Organization Size",
+    subtitle = "Faceted by Remote Work"
+  ) +
+  theme_dark() +
+  theme(axis.text.x = element_text(size = 5))  # Adjust the size here
+
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+library(knitr)
+library(kableExtra)
+
+# Create data frame
+data <- data.frame(
+  Questions = c(
+    "1) I have interactions with people outside of my immediate team.",
+    "2) Knowledge silos prevent me from getting ideas across the organization (i.e., one individual or team has information that isn't shared with others).",
+    "3) I can find up-to-date information within my organization to help me do my job.",
+    "4) I am able to quickly find answers to my questions with existing tools and resources.", 
+    "5) I know which system or resource to use to find information and answers to questions I have.",
+    "6) I often find myself answering questions that I've already answered before.",
+    "7) Waiting on answers to questions often causes interruptions and disrupts my workflow.",
+    "8) I feel like I have the tools and/or resources to quickly understand and work on any area of my company's code/system/platform."
+  ),
+  `Strongly disagree` = c(1, 5, 1, 1, 1, 5, 5, 1),
+  Disagree = c(2, 4, 2, 2, 2, 4, 4, 2),
+  `Neither agree nor disagree` = c(3, 3, 3, 3, 3, 3, 3, 3),
+  Agree = c(4, 2, 4, 4, 4, 2, 2, 4),
+  `Strongly agree` = c(5, 1, 5, 5, 5, 1, 1, 5)  
+)
+
+# Convert to kable
+table <- kable(data, col.names = c("Questions", "Strongly disagree", "Disagree", "Neither agree nor disagree", "Agree", "Strongly agree"), 
+              format = "latex", booktabs = TRUE)
+
+# Simple styling  
+table %>%
+  add_header_above(c(" " = 1, "Job Satisfaction Survey" = 5)) %>%
+  kable_styling(latex_options = c("scale_down", "HOLD_position"), full_width = F)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+cleaned_data
+# View(cleaned_data)
+
+#checking for any na values
+any(is.na(cleaned_data))
+
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+#dropping age under 18 and prefer not to say
+cleaned_data_new <- cleaned_data[!(cleaned_data$Age %in% c("Under 18 years old", "Prefer not to say")), ]
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# View(cleaned_data_new)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Function to explore a column
+explore_column <- function(column) {
+  cat("===========================================\n")
+  cat("Exploring column:", column, "\n")
+  
+  # Check if the variable is numeric (continuous) or categorical
+  if (is.numeric(cleaned_data_new[[column]]) || is.integer(cleaned_data_new[[column]])) {
+    cat("Type: Numeric\n")
+    
+    # Display summary statistics
+    cat("Summary statistics:\n")
+    print(summary(cleaned_data_new[[column]]))
+  } else {
+    cat("Type: Categorical\n")
+    
+    # Display unique values or levels
+    cat("Unique values/levels:\n")
+    print(table(cleaned_data_new[[column]]))
+  }
+  cat("\n")
+}
+
+# Explore each column in the new_data dataframe
+for (column in names(cleaned_data_new)) {
+  explore_column(column)
+}
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+cleaned_data_new <- cleaned_data_new[!(cleaned_data_new$EdLevel %in% c("Something else")), ]
+cleaned_data_new <- cleaned_data_new[!(cleaned_data_new$OrgSize %in% c("I don’t know")), ]
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+na.omit(cleaned_data_new)
+# Function to explore a column
+explore_column <- function(column) {
+  cat("===========================================\n")
+  cat("Exploring column:", column, "\n")
+  
+  # Check if the variable is numeric (continuous) or categorical
+  if (is.numeric(cleaned_data_new[[column]]) || is.integer(cleaned_data_new[[column]])) {
+    cat("Type: Numeric\n")
+    
+    # Display summary statistics
+    cat("Summary statistics:\n")
+    print(summary(cleaned_data_new[[column]]))
+  } else {
+    cat("Type: Categorical\n")
+    
+    # Display unique values or levels
+    cat("Unique values/levels:\n")
+    print(table(cleaned_data_new[[column]]))
+  }
+  cat("\n")
+}
+
+# Explore each column in the new_data dataframe
+for (column in names(cleaned_data_new)) {
+  explore_column(column)
+}
+
+```
+
+# What makes a developer happy and how can we predict their salary?
+
+## I. Abstract
+
+This final report presents an analysis of the 2023 Stack Overflow survey data involving 89,184 software engineers from 185 countries. The report aims to predict developer compensation and understand the factors influencing job satisfaction. The analysis includes multilinear regression models for compensation prediction and ordinal regression for job satisfaction, exploring variables like age, education, work experience, coding languages, remote work, and AI usage. Exploratory data analysis showcases relationships between these variables and compensation, job satisfaction, and demographics. The multiple linear model regression results with RMSE of 1.097 and R\^2 of 0.14 successfully predicts a developer's salary. For job satisfaction, organizational size emerged as a significant determinant, revealing that employees in smaller organizations exhibited higher job satisfaction levels compared to those in larger establishments. For instance, individuals within organizations comprising 2 to 9 employees had 2.35 times higher odds of experiencing job satisfaction (i.e., being satisfied or neutral versus dissatisfied) than their counterparts in larger organizations, while controlling for other variables. These findings emphasize the influential role of organizational size in determining levels of job satisfaction among employees.
+
+## II. Introduction
+
+For over a decade, Stack Overflow has been a pivotal source of invaluable insights into the dynamic landscape of the developer community. Renowned as the authoritative voice among analysts, IT leaders, and reporters, Stack Overflow consistently provides cutting-edge perspectives on the ever-evolving developer experience. Developers worldwide turn to this comprehensive report not only to stay abreast of the latest trends but also to gain profound insights into the trajectory of emerging technologies. It also serves as a central hub for computer programmers worldwide, offering a platform for both questions and answers as well as acting as a comprehensive resource for programming knowledge. Each year, Stack Overflow conducts an extensive online survey, the 2023 edition ran from May 8 to May 19, attracting participation from approximately 91,000 software engineers across 185 countries. This year's survey sought to capture how AI/ML influences developers thinking and their workflows. Following rigorous privacy and data consent checks, 89,184 responses were deemed fit for analysis. This survey encapsulated 84 diverse variables spanning seven primary sections, including Basic Information, Education, Work and Career, Technology and Tech Culture, Stack Overflow Usage, Artificial Intelligence, and Professional Developer Insights. Embarking on a new career is a significant decision that demands a thoughtful and informed approach. Recognizing the pivotal role that a chosen profession plays in shaping one's life, it becomes imperative to meticulously explore career options and assess key factors such as work-life balance and compensation, particularly in the dynamic field of development. Our research endeavors will focus on illuminating these critical aspects through a series of targeted questions:
+
+-   *How can we predict a developer's yearly compensation?*
+
+With this question, we want to understand labor market trends and wage disparities. We want to uncover the variables that influence compensation, such as experience, education, geographic location, and technology proficiency, shedding light on the dynamics of the tech job market.
+
+-   *What elements shape a developer's job satisfaction?*
+
+With this question, we want to understand what brings happiness to developers at work. Developers can identify the aspects of their job that contribute to their happiness, enabling them to make informed career decisions and prioritize what matters most and employers can leverage this insight to foster a work environment that ensures the happiness of their developers, ultimately resulting in increased productivity and higher employee retention.
+
+## III. Methods
+
+## III. Data: Salary
+
+To answer the question "How can we predict a developer's yearly compensation?" We first conducted data analysis and relevant data cleaning. We observed non-numeric entries like 'less than 1 year' in the 'professional programmer experience' variable and we solve this by converting it to a numerical value of .5 year. Additionally, variable selection challenges arise due to few numeric variables, exemplified by age being categorized (e.g., 'under 18') rather than numerical, in that sense we have decided to get rid of those under 18 because our focus is on those who have already entered the workforce and are engaged in the industry. Furthermore, we created an additional variable that was not originally present in the database. The purpose was to determine the number of programming languages that each person knew. We counted the number of languages that each individual listed to assess whether knowing more programming languages has an impact on compensation.
+
+The initial research inquiry pertains to a prediction model, specifically aiming to forecast a developer's annual compensation based on certain independent variables. For this question we aim to build a predictive multilinear regression model using the following variables:
+
+-   *Age:* 18-24 years old, 25-34 years old, 35-44 years old, 45-54 years old, 55-64 years old, 65 years or older, prefer not to say, under 18 years old.
+-   *Type of work:* Hybrid, In-person, Remote.
+-   *Years of coding experience:* Less than 1 year, numbers from 1 to 50 years, more than 50 years.
+-   *Education level:* Associate degree, bachelor's degree, master's degree, elementary school, professional degree, secondary school, some college, something else.
+-   *Years of working experience:* from 0 to 50 years.
+-   *Number of programming languages each developer knew and worked with:*from 0 to 51 languages.
+
+## III. Model : Salary
+
+This multiple linear regression model is related to a prediction problem where we aim to forecast a developer's annual compensation based on certain independent variables. In terms of variable selection, we will be comparing the model that includes the interaction term with another model that excludes it.
+
+***Interaction Terms***: We are interested in how the relationship between years of coding experience and a developer's yearly compensation varies across different levels of education, so for this research question we will include an interaction term with educational level and years of coding experience.
+
+For each of the two models, we will perform the following model fitting procedures:
+
+***Multicolinearity***: We will use Variance Inflation Factor (VIF) to assess multicolinearity among all the predictor variables in this model. High VIF values indicate that it's hard to distinguish the individual effects of predictor variables on the outcome because they are too closely linked.
+
+**Multiple Linear Regression Model Assumptions**: *Linearity*, *Equal variance of errors*, *Normality of errors*, *Independence of errors*. We will assess the assumptions with residual plots and transform predictors or the outcome as needed.
+
+**Influential Points:** After running the main regression with potential variable transformations to address the multilinear model assumptions, we will observe the cook's distance and leverage in the last two diagnostic plots to check if the model have influential points, which are individual observations that can have a large impact on the model as a whole, that need to be handled.
+
+## III. Model Assessment: Salary
+
+We will employ cross-validation on both models and compare their performance using Root Mean Square Error (RMSE). A lower RMSE indicates a more accurate model with predictions closely mirroring actual outcomes. The model with the lowest RMSE will be chosen to predict a developer's annual compensation.
+
+## IV. Exploratory Data Analysis Results: Salary
+
+The histogram displays the distribution of the Converted Yearly Compensation variable, excluding potential outliers. The majority of respondents indicated salaries in the 50k-150k range, though some reported earnings as high as 500-600k, and a few even in the millions (not shown in the histogram as outliers).
+
+```{r, echo=FALSE, fig.height=3, fig.width=9, message=FALSE, warning=FALSE}
+library(ggplot2)
+
+# Remove NA values from ConvertedCompYearly
+cleaned_data <- na.omit(new_data)
+
+# Calculate the 99.5th percentile threshold for the non-NA data
+salary_threshold <- quantile(cleaned_data$ConvertedCompYearly, 0.995)
+
+# Filter data to remove the top 0.5% of salaries
+filtered_data <- cleaned_data[cleaned_data$ConvertedCompYearly <= salary_threshold,]
+
+# Define breaks and labels for the x-axis
+breaks <- seq(0, salary_threshold, by = 50000)
+labels <- paste0(breaks/1000, "k")  # Add "k" suffix to labels
+
+ggplot(filtered_data, aes(x = ConvertedCompYearly)) +
+  geom_histogram(binwidth = 50000, boundary = 0, fill = "lightblue", color = "black") +
+  scale_x_continuous(breaks = breaks, labels = labels) +  # Set custom breaks and labels
+  labs(
+    x = "Yearly Salary (USD)",
+    y = "Frequency",
+    title = "Histogram of Yearly Salaries (Excluding Top 0.5% outliers)"
+  )
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+library(ggplot2)
+library(dplyr)
+```
+
+**Relationship between Work Experience and Converted Yearly Compensation**
+
+If we analyze the distribution of remote work across different levels of work experience and compensation, we can observe that it is well-balanced between hybrid, in-person, and remote arrangements. It appears that the mode of work does not significantly influence the salary that individuals are earning.
+
+```{r, echo=FALSE, fig.height=3, fig.width=9, message=FALSE, warning=FALSE}
+# Using RemoteWork as color line
+new_data$LogComp <- log(new_data$ConvertedCompYearly)
+ggplot(new_data, aes(x = WorkExp, y = log(ConvertedCompYearly), col = RemoteWork)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Work Experience",
+       x = "Work Experience (Years)",
+       y = "Converted Yearly Compensation",
+       color = "Remote Work") 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Using Age as color line
+ggplot(new_data, aes(x = WorkExp, y = log(ConvertedCompYearly), col= Age)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Work Experience",
+       x = "Work Experience (Years)",
+       y = "Converted Yearly Compensation",
+       color = "Age") 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Using RemoteWork as color line
+ggplot(new_data, aes(x = WorkExp, y = log(ConvertedCompYearly), col = RemoteWork)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Work Experience",
+       x = "Work Experience (Years)",
+       y = "Converted Yearly Compensation",
+       color = "Remote Work") 
+
+# Using EdLevel as color line
+ggplot(new_data, aes(x = WorkExp, y = log(ConvertedCompYearly), col = EdLevel)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Work Experience",
+       x = "Work Experience (Years)",
+       y = "Converted Yearly Compensation",
+       color = "Education Level") 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Using RemoteWork as color line
+ggplot(new_data, aes(x = CodingLanguageNum, y = log(ConvertedCompYearly), col = RemoteWork)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Number of Coding Languages",
+       x = "Number of Coding Languages",
+       y = "Converted Yearly Compensation",
+       color = "Remote Work") 
+
+# Using Age as color line
+ggplot(new_data, aes(x = CodingLanguageNum, y = log(ConvertedCompYearly), col= Age)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Number of Coding Languages",
+       x = "Number of Coding Languages",
+       y = "Converted Yearly Compensation",
+       color = "Age") 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Function to explore a column
+explore_column <- function(column, data) {
+  cat("===========================================\n")
+  cat("Exploring column:", column, "\n")
+  
+  # Check if the variable is numeric (continuous) or categorical
+  if (is.numeric(data[[column]]) || is.integer(data[[column]])) {
+    cat("Type: Numeric\n")
+    
+    # Display summary statistics
+    cat("Summary statistics:\n")
+    print(summary(data[[column]]))  # Corrected this line
+    
+    # Create a histogram for numeric columns
+    hist(data[[column]], main = paste("Histogram of", column))
+  } else {
+    cat("Type: Categorical\n")
+    
+    # Display unique values/levels
+    cat("Unique values/levels:\n")
+    print(table(data[[column]]))
+    
+    # Create a bar plot for categorical columns
+    barplot(table(data[[column]]), main = paste("Bar Plot of", column))
+  }
+  cat("\n")
+}
+
+# Explore each column in the new_data dataframe
+for (column in names(new_data)) {
+  explore_column(column, new_data)
+}
+
+```
+
+## IV. Model Results: Salary
+
+***Multicolinearity***: The VIF for the preliminary main regression (converted yearly compensation \~ the rest of the variables) shows that most of the variables have low multicolinearity, with the adjusted GVIF close to 1, suggesting that they are not correlated with each other. While work experience and years of coding experience do show moderate multicolinearity, they are within generally acceptable levels. Therefore, all these variables were included in the model, since the overall low levels of multicolinearity should not significantly impact the model.
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# initial model fit with nothing transformed
+model_1 <- lm(ConvertedCompYearly ~ Age + CodingLanguageNum + RemoteWork + EdLevel + WorkExp + YearsCodePro, data = cleaned_data_new)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+library(car)
+#check multicollinearity
+vif(model_1)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+summary(model_1)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+plot(model_1) 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+#log transform y based on the initial model
+log_model_1 <- lm(log(ConvertedCompYearly) ~ Age + CodingLanguageNum + RemoteWork + EdLevel + WorkExp + YearsCodePro, data = cleaned_data_new)
+summary(log_model_1) 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+plot(log_model_1)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+data_without_cooks_for_log <- cleaned_data_new %>%
+  filter(!(row.names(cleaned_data_new) %in% c(5375)))
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# there was no difference when I removed 5375 point. I will just keep the original dataframe and stop here
+log_model_without_cooks <- lm(log(ConvertedCompYearly) ~ Age + CodingLanguageNum + RemoteWork + EdLevel + WorkExp + YearsCodePro, data = data_without_cooks_for_log)
+summary(log_model_without_cooks) 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+#the final model without interaction term with log transformation
+log_model_1 <- lm(log(ConvertedCompYearly) ~ Age + CodingLanguageNum + RemoteWork + EdLevel + WorkExp + YearsCodePro, data = cleaned_data_new)
+summary(log_model_1) 
+```
+
+***Variable Transformation***: After running our main regression with added interaction term, we observed the first two diagnostic plots to see if the model violate any of the linear regression assumptions.
+
+-   *Linearity*: From the residual vs fitted plot, it shows the linear relationship between predictor variables and the mean of outcome variable is not violated.
+
+-   *Equal variance of errors*: Form the residual vs fitted plot, it shows the equal variance of errors is violated because it does not demonstrate a cloud shape equally spread around 0. To address the assumption of equal variance of errors, we transformed the outcome variable log(converted yearly compensation). The plots after transformation can be found in *Appendix 2*.
+
+-   *Normality of errors*: From the qq plot, it shows the normality of errors is violated because the tailing points are not clustered around the 45 degree line. After we address the equal variance of errors assumption through outcome variable transformation, this assumption should be addressed.
+
+-   *Independence of errors*: Observations are independent of each other, which is addressed by the study design.
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+#fit a model with interaction term
+model_interaction <- lm(ConvertedCompYearly ~ Age + CodingLanguageNum + RemoteWork + WorkExp + EdLevel * YearsCodePro, data = cleaned_data_new)
+summary(model_interaction) 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+plot(model_interaction)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=8, fig.height=3}
+# Set up the plotting area for two plots side by side
+par(mfrow=c(1,2))  # 1 row, 2 columns
+
+# Plot the Residuals vs Fitted
+plot(model_interaction, which=1)
+
+# Plot the Normal Q-Q
+plot(model_interaction, which=2)
+```
+
+**Influential Points:**
+
+After running our main regression with variable transformations, we observed the last two diagnostic plots to check if the model has influential points that need to be handled.
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+#add log transformation to the model with interaction term
+log_model_interaction <- lm(log(ConvertedCompYearly) ~ Age + CodingLanguageNum + RemoteWork + WorkExp + EdLevel * YearsCodePro, data = cleaned_data_new)
+summary(log_model_interaction) 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+plot(log_model_interaction)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=8, fig.height=3}
+# Set up the plotting area for two plots side by side
+par(mfrow=c(1,2))  # 1 row, 2 columns
+
+plot(log_model_interaction, which=3)
+
+plot(log_model_interaction, which=5)
+```
+
+From the Residual vs Leverage plot, we observed that there were no influential point on Cook's distance. Then, we began to inspect points with either high leverage or high standardized residuals. we decided to drop point 14986, which had high leverage. Upon removing point 14986 and observing my regression outcome, we concluded that point 14986 is indeed influential as the p-value of the interaction term between primary/elementary school educational level and years of coding experience becomes insignificant (from 0.04882\* to 0.66865) after its removal, indicating that this point has a substantial impact on the model as a whole. Subsequently, we removed point 1893, which also had high leverage, and revisited the model. However, the significance level of the model remained unchanged, suggesting that point 1893 is not an influential point as it doesn't have substantial impact on the model as a whole . In the end, we removed only one influential point 14986. The plots with outliers being removed can be found in *Appendix 3*.
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+#remove point 14986 with high leverage
+data_without_cooks_for_log_interaction <- cleaned_data_new %>%
+  filter(!(row.names(cleaned_data_new) %in% c(14986)))
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+#significance level does change. remove the point
+log_model_interaction_without_cooks <- lm(log(ConvertedCompYearly) ~ Age + CodingLanguageNum + RemoteWork + WorkExp + EdLevel * YearsCodePro, data = data_without_cooks_for_log_interaction)
+summary(log_model_interaction_without_cooks) 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+plot(log_model_interaction_without_cooks)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+#remove point 1893 with high leverage to see if it's an influential point
+data_without_cooks_for_log_interaction_2 <- data_without_cooks_for_log_interaction %>%
+  filter(!(row.names(data_without_cooks_for_log_interaction) %in% c(1893)))
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+#significance level does not change. stop here and don't remove the point
+log_model_interaction_without_cooks_2 <- lm(log(ConvertedCompYearly) ~ Age + CodingLanguageNum + RemoteWork + WorkExp + EdLevel * YearsCodePro, data = data_without_cooks_for_log_interaction_2)
+summary(log_model_interaction_without_cooks_2) 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+#final model 2 with log y, interaction terms and influential points removed
+log_model_interaction_without_cooks <- lm(log(ConvertedCompYearly) ~ Age + CodingLanguageNum + RemoteWork + WorkExp + EdLevel * YearsCodePro, data = data_without_cooks_for_log_interaction)
+summary(log_model_interaction_without_cooks) 
+```
+
+Our final multiple linear regression model has log-transformed yearly compensation as the outcome variable and several predictor variables: age, number of coding languages, remote work status, work experience, education level, and years of coding experience. Additionally, it includes an interaction term between education level and years of coding experience to assess their joint impact on the compensation. This model is based on an updated dataset, where influential point 14986 has been excluded for more accurate results. The regression result table can be found in *Appendix 4*.
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+library(sjPlot)
+# Renaming the variables
+final_data_linear <- data_without_cooks_for_log_interaction %>%
+  rename(
+    `Converted Yearly Compensation` = ConvertedCompYearly,
+    `Age` = Age,
+    `Number of Coding Languages` = CodingLanguageNum,
+    `Remote Work Status` = RemoteWork,
+    `Years of Work Experience` = WorkExp,
+    `Education Level` = EdLevel,
+    `Years of Professional Coding` = YearsCodePro
+  )
+
+# Fitting the linear regression model with the new variable names
+log_model_interaction_renamed <- lm(log(`Converted Yearly Compensation`) ~ `Age` + `Number of Coding Languages` + `Remote Work Status` + `Years of Work Experience` + `Education Level` * `Years of Professional Coding`, data = final_data_linear)
+
+# Printing the summary of the regression model
+tab_model(log_model_interaction_renamed)
+```
+
+## IV. Model Assessment: Salary
+
+We developed two models for comparison: the main model, which includes an interaction term, and a secondary model without this interaction term. To evaluate the performance of these models, we employed the Root Mean Square Error (RMSE) as our primary metric. Through cross-validation, we found that the RMSE of the main model was approximately 1.097. In contrast, the secondary model exhibited a slightly higher RMSE of approximately 1.099. Given that a lower RMSE indicates a model with predictions more closely aligned with actual outcomes, we determined that the main model, with its marginally lower RMSE, is the more accurate of the two. A low R-squared value of 0.14 indicates that the model explains only a small portion of the variability in the response variable. However, in our case of dealing with human factors and complex systems influencing salaries, a lower R² might still be considered acceptable due to the inherent variability in the data.
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# calculate RMSE for model 1
+library(caret)
+library(car)
+set.seed(1113)
+
+# Setting up the 10-fold cross-validation
+train_control <- trainControl(
+  method = "cv",  # Cross-validation
+  number = 10     # Number of folds
+)
+
+# Building a linear model with interaction terms
+model_full_1 <- train(log(ConvertedCompYearly) ~ Age + CodingLanguageNum + RemoteWork + EdLevel + WorkExp + YearsCodePro, data = cleaned_data_new,  # Use the pre-processed data
+  method = "lm",                # Linear model
+  trControl = train_control     # Defined training control
+)
+print(model_full_1)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# calculate RMSE for model 2
+set.seed(1113)
+
+# Setting up the 10-fold cross-validation
+train_control <- trainControl(
+  method = "cv",  # Cross-validation
+  number = 10     # Number of folds
+)
+
+# Building a linear model with interaction terms
+model_full_2 <- train(log(ConvertedCompYearly) ~ Age + CodingLanguageNum + RemoteWork + WorkExp + EdLevel * YearsCodePro, data = data_without_cooks_for_log_interaction,  # Use the pre-processed data
+  method = "lm",                # Linear model
+  trControl = train_control     # Defined training control
+)
+print(model_full_2)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# calculate RMSE for model 2
+set.seed(1113)
+
+# Setting up the 10-fold cross-validation
+train_control <- trainControl(
+  method = "cv",  # Cross-validation
+  number = 10     # Number of folds
+)
+
+# Building a linear model with interaction terms
+model_full_2 <- train(log(ConvertedCompYearly) ~ Age + CodingLanguageNum + RemoteWork + WorkExp + EdLevel * YearsCodePro, data = data_without_cooks_for_log_interaction,  # Use the pre-processed data
+  method = "lm",                # Linear model
+  trControl = train_control     # Defined training control
+)
+
+# Extracting the results
+results <- model_full_2$results
+rmse <- results$RMSE[which.min(results$RMSE)]  # RMSE
+rsq <- results$Rsquared[which.max(results$Rsquared)]  # R^2
+mae <- results$MAE[which.min(results$MAE)]  # MAE
+
+# Creating a data frame of the results
+result_df <- data.frame(
+  Metric = c("RMSE", "R^2", "MAE"),
+  Value = c(rmse, rsq, mae)
+)
+
+# Generating the table
+kable(result_df, format = "markdown", caption = "Model Metrics")
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+#View(final_data_linear)
+```
+
+**Model Prediction:**
+
+Here is an example illustrating the utility of the model: For an individual aged between 25 to 34 years old, proficient in 6 coding languages, working in a hybrid environment (some remote, some in-person), with 5 years of work experience, holding a master's degree (M.A., M.S., M.Eng., MBA, etc.), and having 8 years of professional coding experience, the model predicts a yearly compensation of approximately \$62,782.53 USD.
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# New data for prediction
+new_data_prediction <- data.frame(
+  `Age` = "25-34 years old",
+  `Number of Coding Languages` = 6,
+  `Remote Work Status` = "Hybrid (some remote, some in-person)",
+  `Years of Work Experience` = 5,
+  `Education Level` = "Master’s degree (M.A., M.S., M.Eng., MBA, etc.)",
+  `Years of Professional Coding` = 8.0
+)
+
+names(new_data_prediction) <- c("Age", "Number of Coding Languages", "Remote Work Status", "Years of Work Experience", "Education Level", "Years of Professional Coding")
+
+#print(new_data)
+
+# Use the predict() function to get log-transformed predictions for new_data
+predicted_log_compensation <- predict(log_model_interaction_renamed, newdata = new_data_prediction)
+
+# Transform the log predictions back to the original scale
+predicted_compensation <- exp(predicted_log_compensation)
+
+# Add a new column to new_data for the predicted yearly compensation
+new_data_prediction$predicted_yearly_compensation <- predicted_compensation
+
+# Change the name of the column
+names(new_data_prediction)[names(new_data_prediction) == "predicted_yearly_compensation"] <- "Predicted USD yearly compensation"
+
+# Print the new data with predicted values
+kable(new_data_prediction, format = "markdown", align = "c") %>%
+  kable_styling(latex_options = c("scale_down", "HOLD_position"), full_width = FALSE)
+
+```
+
+## V. Data: Job Satisfaction
+
+To answer the question "What elements shape a developer's job satisfaction?" We created a variable from a questionnaire that ranges from 1 to 5, considering 5 as the number that represented the highest satisfaction. For its construction, please refer to Appendix 1.
+
+To answer this question it is necessary to consider variables that are logically associated with job satisfaction, in that sense we decided to use the following independent variables:
+
+-   *Age:* 18-24 years old, 25-34 years old, 35-44 years old, 45-54 years old, 55-64 years old, 65 years or older, prefer not to say, under 18 years old.
+-   *Type of work:* Hybrid, In-person, Remote.
+-   *Organization size:* 2 to 9 employees,10 to 19 employees, 20 to 99 employees,100 to 499 employees, 500 to 999 employees,1,000 to 4,999 employees, 5,000 to 9,999 employees, 10,000 or more employees, I don't know, just me
+-   *Yearly compensation in USD:* From 1 to 74,351,432 USD dollars.
+-   *Usage and incorporation of Artificial Intelligence to the job:* No and I don't plan to, No but I plan to soon, Yes
+
+## V. Model : Job Satisfaction
+
+This question is related to an inference problem where we want to understand which variables impact job satisfaction. We want to measure the job satisfaction metric on an ordinal scale ("Satisfied", "Neutral", "Dissatisfied"). Specifically, we want to comprehend how predictors affect the likelihood of transitioning from one category to another and for this reason we will use an ordinal regression.
+
+For the selection of the dependent variable, we will convert the survey results for Job Satisfaction. The data was classified using quartiles. Data from the first quartile downwards will correspond to the category 'Dissatisfied', from the 1st quartile up to the 3rd quartile will correspond to the category 'Neutral', and data above the 3rd quartile will represent the category 'Satisfied'.
+
+We are interested in how the relationship between a developer's yearly compensation and job satisfaction varies across different categories of age so we will include an interaction term with age and yearly compensation. In summary, including this interaction term with age and yearly compensation in our model will allow us to investigate how the relationship between yearly compensation and job satisfaction is modified or varies across different categories of age.
+
+## VI. Exploratory Data Analysis Results: Job Satisfaction
+
+Now we are going to explore the distribution of our variable of interest: Job Satisfaction.
+
+```{r, echo=FALSE, fig.height=3, fig.width=9, message=FALSE, warning=FALSE}
+library(ggplot2)
+
+# Create the histogram with grid lines
+ggplot(data_copy, aes(x = avg_score)) +
+  geom_histogram(binwidth = .4, fill = "lightblue", color = "black") +
+  labs(
+    x = "Average Score",
+    y = "Frequency",
+    title = "Distribution of Average Scores For Job Satisfactions"
+  )
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+summary(data$avg_score)
+
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+head(data$avg_score)
+```
+
+The histogram illustrates the distribution of the average scores for the Job Satisfaction variable. The scores tend to follow a near-normal distribution, with the bulk of observations falling within a standard deviation of the mean (approximately 3). We then categorized the Job Satisfaction variable into three groups: Not Satisfied (1.0 - 2.875), Neutral(2.875 - 3.625), Satisfied (3.625 - 5.0).
+
+**Relationship between Age, compensation and Job satisfaction**
+
+```{r, echo=FALSE, fig.height=4, fig.width=9, message=FALSE, warning=FALSE}
+library(ggplot2)
+
+# Define the threshold for excluding salaries above 600k
+salary_threshold <- 600000
+
+# Remove rows with NA in JobSatisfaction and Age columns
+filtered_data <- na.omit(new_data[, c("ConvertedCompYearly", "JobSatisfaction", "Age")])
+
+# Reorder Age variable for better presentation in facets
+filtered_data$Age <- factor(filtered_data$Age, levels = unique(filtered_data$Age))
+
+# Create a box plot with outliers removed and customized x-axis labels
+p <- ggplot(filtered_data[filtered_data$ConvertedCompYearly <= salary_threshold, ], 
+            aes(x = Age, y = ConvertedCompYearly)) +
+  geom_boxplot() +
+  scale_y_continuous(labels = scales::comma, breaks = seq(0, salary_threshold, 100000)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Add labels and a title
+p + labs(
+  x = "Age",
+  y = "Yearly Salary (USD)",
+  title = "Relationship Between Age and Yearly Salary (Box Plot)"
+)
+```
+
+Our aim was to investigate the interplay between job satisfaction, compensation, and age graphically. We observed a consistent trend where higher salaries correlated with greater overall satisfaction. To enhance visualization and mitigate outlier effects, we capped the salary at 600K USD. As anticipated, the data revealed that, on average, as individuals aged, their median salary tended to rise, aligning with an increased likelihood of job satisfaction. Notably, individuals under 18 had the lowest median pay, followed by those aged 18-24, while individuals aged 65 and older boasted the highest median salary.
+
+*Relationship between Job satisfaction, RemoteWork and Organization size*
+
+```{r, echo=FALSE, fig.height=3, fig.width=9, message=FALSE, warning=FALSE}
+library(ggplot2)
+
+# Remove NA values from the RemoteWork variable
+new_data_cleaned <- na.omit(new_data)
+
+# Create the bar plot with a customized color palette and without NA values in RemoteWork
+ggplot(new_data_cleaned, aes(x = JobSatisfaction, fill = OrgSize)) +
+  geom_bar(position="stack") +
+  facet_wrap(~RemoteWork) +
+  scale_fill_brewer(palette="Set2", na.value = "transparent") +
+  labs(
+    x = "Job Satisfaction",
+    y = "Count",
+    fill = "Organization Size",
+    title = "Distribution of Job Satisfaction by Organization Size",
+    subtitle = "Faceted by Remote Work"
+  ) +
+  theme_dark() +
+  theme(axis.text.x = element_text(size = 5))  # Adjust the size here
+
+```
+
+This plot is to show the relationship between Job Satisfaction and two of our predictor variables: Organization Size and Remote Work. An interesting trend in our data was that the number of In-person workers is less frequent. In terms of organization size, the most common answers were either 20-99 employees or 100-499 employees, and are fairly distributed among all three categories of Job Satisfaction, with the majority of individuals in these organization sizes being generally Satisfied.
+
+## VI. Model Results: Job Satisfaction
+
+The coefficients from the ordinal model can be somewhat difficult to interpret because they are scaled in terms of logs. For interpret this ordinal model we will convert the coefficients into odds ratios. We will exponentiate the estimates and confidence intervals. These coefficients are called proportional odds ratios:
+
+```{r, echo=FALSE, fig.height=5, fig.width=9, message=FALSE, warning=FALSE}
+#Just for the table
+library(sjPlot)
+library(MASS)
+# Renaming the variables
+cleaned_data_new$LogComp <- log(cleaned_data_new$ConvertedCompYearly)
+
+final_data_ordinal <- cleaned_data_new %>%
+  rename(
+    `Converted Yearly Compensation` = LogComp,
+    `Age` = Age,
+    `Remote Work Status` = RemoteWork,
+    `Organization Size` = OrgSize,
+    `AI Usage` = AISelect,
+
+  )
+
+# Fitting the linear regression model with the new variable names
+ord_model_table <- polr(JobSatisfaction ~ Age  + `Converted Yearly Compensation` + `Remote Work Status` + `Organization Size` + `AI Usage` + Age*`Converted Yearly Compensation` , data=final_data_ordinal, Hess=TRUE)
+
+# Printing the summary of the regression model
+tab_model(ord_model_table)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+library(MASS)
+#ord_model <- polr(JobSatisfaction ~ Age + RemoteWork + ConvertedCompYearly + OrgSize + AISelect + Age*ConvertedCompYearly, data=data, Hess=TRUE)
+#summary(ord_model)
+
+#cleaned_data_new$LogComp <- log(cleaned_data_new$ConvertedCompYearly)
+
+ord_model <- polr(JobSatisfaction ~ Age  + LogComp + RemoteWork + OrgSize + AISelect + Age*LogComp , data=cleaned_data_new, Hess=TRUE)
+
+summary(ord_model)
+
+#tab_model(ord_model,  pred.labels = c("Age 25-34 years old", "Age 35-44 years old","Age 45-54 years old","Age 55-64 #years old","Age 65 years or older","Log Compensation","Work In-person","Remote Work" , "Organizational Size: 10 to #19 employees" ,"Organizational Size: 10,000 or more employees" ,"Organizational Size: 100 to 499 employees" #,"Organizational Size: 2 to 9 employees" ,"Organizational Size: 20 to 99 employees" ,"Organizational Size: 5,000 to #9,999 employees" ,"Organizational Size: 500 to 999 employees"  ,"Organizational Size: Just me","AI Selection:No, but #I plan to soon" ,"AI Select:Yes","Age 25-34 years old * Log Compensation", "Age 35-44 years old * Log #Compensation","Age 45-54 years old * Log Compensation", "Age 55-64 years old * Log Compensation" , "Age 65 years or #older * Log Compensation"))
+
+```
+
+```{r, eval = FALSE, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+#library(gtsummary)
+#library(tidyverse)
+#library(survival)
+
+#ord_model %>%
+#  tbl_regression(exponentiate = TRUE,label = list(LogComp ~ "Log Compensation", RemoteWork ~ "Remote work", OrgSize #~ "Organization Size", AISelect ~ "AI Usage"), pvalue_fun = ~ style_pvalue(.x, digits = 2)) %>%
+#  add_global_p() %>%
+#  bold_p(t = 0.10) %>%
+#  bold_labels() %>%
+#  italicize_levels()
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Extract coefficients from the ordinal regression model
+#coef_names <- names(coef(ord_model))  # Get the names of coefficients
+#print(coef_names)
+
+# Rename coefficients if needed
+# Replace these names with the ones you desire
+#new_coef_names <- c("Age 25-34 years old", "Age 35-44 years old","Age 45-54 years old","Age 55-64 years old","Age 65 #years or older","Log Compensation","Work In-person","Remote Work" , "Organizational Size: 10 to 19 employees" #,"Organizational Size: 10,000 or more employees" ,"Organizational Size: 100 to 499 employees" ,"Organizational Size: #2 to 9 employees" ,"Organizational Size: 20 to 99 employees" ,"Organizational Size: 5,000 to 9,999 employees" #,"Organizational Size: 500 to 999 employees"  ,"Organizational Size: Just me","AI Selection:No, but I plan to soon" #,"AI Select:Yes","Age 25-34 years old * Log Compensation", "Age 35-44 years old * Log Compensation","Age 45-54 years #old * Log Compensation", "Age 55-64 years old * Log Compensation" , "Age 65 years or older * Log Compensation" )
+#print(new_coef_names)
+
+#Update the names of coefficients
+#coef_names <- new_coef_names
+
+#print(coef_names)
+#label = list(race ~ "Race", gender ~ "Gender", years_college ~ "Years of college"
+```
+
+```{r,  message=FALSE, warning=FALSE, include=FALSE}
+# Printing the summary of the regression model
+#tab_model(ord_model)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+#exp_coefs <- exp(cbind(OR=coef(ord_model),confint(ord_model)))
+#print(exp_coefs)
+
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+#tabla_entera <- cbind(exp_coefs,pvals)
+#tabla_entera
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Round the matrix to 2 decimals
+#exp_coefs_rounded2 <- round(tabla_entera, digits = 3)
+#print(exp_coefs_rounded2)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Round the matrix to 2 decimals
+#exp_coefs_rounded <- round(exp_coefs, digits = 2)
+#print(exp_coefs_rounded)
+```
+
+Here we are also computing Confidence intervals (CIs) for parameter estimates, this CIs provide a range of likely values for a population parameter. If a 95% CI does not cross 0, it means the parameter estimate is statistically significant.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Round the matrix to 2 decimals
+#my_df2 <- as.data.frame(exp_coefs_rounded2)
+#knitr::kable(my_df2, format = "markdown")
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Convert matrix to data frame
+#my_df <- as.data.frame(exp_coefs_rounded)
+#knitr::kable(my_df, format = "markdown")
+```
+
+It is interesting to observe that most of our variables are not significant if we consider that they do not have a p-value \< .05. In principle, we would think that our selected variables such as age, compensation, or work style influence people's job satisfaction, but this is not observed in our model. However, we can observe that the only significant variable is the one related to the size of the organization, mainly within companies with few employees.
+
+Let's interpret the organizations with the smallest group of employees (from 2 to 9 employees). For workers whose companies are from 2 to 9 employees, the odds of being more satisfied (i.e., satisfied or neutral versus dissatisfied) in the job is 2.35 times that of workers who work in a larger organization, holding constant all other variables.
+
+Another variable that we see is significant is for those people who use Artificial Intelligence to execute their work. In this case, we see that for the case of these employees, the odds of being more satisfied (i.e., satisfied or neutral versus dissatisfied) in the job is 5.60% lower \[i.e., (1 - 0.944) x 100%\] than those who do not plan to use it, holding constant all other variables.
+
+## VI. Model Assessment: Job Satisfaction
+
+To evaluate our ordinal model, we will follow the steps below:
+
+We will evaluate predicted probabilities of being in each category and then generate a confusion matrix to assess the accuracy of the predictions. Then we will assess the proportional odds assumption. To do this, we will compare the predicted probabilities using the multinomial model, which is a more precise model, to the predicted probabilities with the ordinal model. For this purpose, we will create a new data frame with different combinations of predictor values, keeping the variable "Yearly compensation in USD" constant using the average of our data. Then, we will compare the predicted probabilities from the ordinal model and the multinomial model, as well as the confusion matrices for both models.
+
+To assess whether the proportional odds assumption holds in this model, we will compare the predicted probabilities obtained from the more precise multinomial model to those obtained from the ordinal model. However, it's crucial to acknowledge that this evaluation involves a degree of subjectivity, as determining a threshold for significant discrepancies in predicted probabilities indicating a violation of the assumption can be challenging.
+
+To generate predictions, we will create a new data frame with all the possible combinations of predictor values. It's generally easier to utilize different combinations of categorical variables while keeping continuous predictors constant, thas why in this case, we keep the salary variable constant using the mean of the data.
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+head(ord_model$fitted.values)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+head(cleaned_data_new) 
+#Por ejemplo aqui puedo ver que no tengo un individuo que represente el on office work y en el dataset sintetico deberia de generar uno y compararlos con el correspondiente. 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+summary(data$avg_score)
+#Para la distribucion de las categorias el primero deberia de ser de 1 a 1rst Qu, el 2do de 1st Qu al 3rd Qua y el tercero de 3.625 en adelante
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+head(predict(ord_model))
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Predict probabilities
+pred_probs <- predict(ord_model, type = "probs")
+
+# Classify into predicted categories
+pred_class <- apply(pred_probs, 1, which.max)
+
+# Create a confusion matrix
+conf_matrix <- table(cleaned_data_new$JobSatisfaction, pred_class)
+
+# Display the confusion matrix
+print("Confusion Matrix:")
+print(conf_matrix)
+
+# Calculate accuracy
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+print(paste("Accuracy:", round(accuracy, 3)))
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+str(cleaned_data_new$JobSatisfaction) #Para ver cuales son las clases
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+summary(cleaned_data_new$JobSatisfaction)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Create vectors for each variable
+JobSatisfaction <- c("Neutral","Satisfied","Not satisfied")
+Age <- c("18-24 years old", "25-34 years old", "35-44 years old", "45-54 years old", "55-64 years old", "65 years or older")
+LogComp <- mean(cleaned_data_new$LogComp)
+RemoteWork <- c("Hybrid (some remote, some in-person)", "In-person", "Remote")
+OrgSize <- c("2 to 9 employees", "10 to 19 employees", "20 to 99 employees", "100 to 499 employees", "500 to 999 employees", "1,000 to 4,999 employees", "5,000 to 9,999 employees", "10,000 or more employees")
+AISelect <- c("Yes", "No, and I don't plan to", "No, but I plan to soon")
+
+# Create a data frame with all possible combinations
+all_combinations <- expand.grid(JobSatisfaction = JobSatisfaction, Age = Age, LogComp = LogComp, RemoteWork = RemoteWork, OrgSize = OrgSize, AISelect = AISelect)
+
+print(all_combinations)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Create vectors for each variable
+JobSatisfaction <- c("Neutral")
+Age <- c("25-34 years old")
+LogComp <- mean(cleaned_data_new$LogComp)
+RemoteWork <- c("Hybrid (some remote, some in-person)")
+OrgSize <- c("2 to 9 employees", "10 to 19 employees", "20 to 99 employees", "100 to 499 employees", "500 to 999 employees", "1,000 to 4,999 employees", "5,000 to 9,999 employees", "10,000 or more employees")
+AISelect <- c("Yes")
+
+few_combinations <- expand.grid(JobSatisfaction = JobSatisfaction, Age = Age, LogComp = LogComp, RemoteWork = RemoteWork, OrgSize = OrgSize, AISelect = AISelect)
+
+print(few_combinations)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+newdat <- cbind(all_combinations, predict(ord_model,all_combinations, type = "probs"))
+head(newdat)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+library(reshape2)
+lnewdat <- melt(newdat, id.vars = c("JobSatisfaction","Age", "LogComp","RemoteWork", "OrgSize","AISelect"),
+  variable.name = "Level", value.name="Probability")
+## view first few rows
+head(lnewdat)
+```
+
+Because in this model we have more than 400 different combinations of unique values, we are going to analyze this assumption by comparing 8 predicted probabilities from the ordinal model and the multinomial model, considering age of 25-34 years old, the mean of log compensation, a hybrid type of work, and each size of the organization, and a yes in AI usage:
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+library(nnet) #package for multinomial model
+mult_mod <- multinom(JobSatisfaction ~ Age  + LogComp + RemoteWork + OrgSize + AISelect + Age*LogComp , data=cleaned_data_new)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+ordinal_prediction <- predict(ord_model, few_combinations, type="probs")
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Print the confusion matrix using kable
+kable(ordinal_prediction, caption = "Ordinal Model Predictions", align = "c") %>%
+  kable_styling(latex_options = c("HOLD_position"))  # Optional styling for the table
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+mult_mod_table <- predict(mult_mod, few_combinations, type="probs")
+```
+
+```{r, echo=FALSE, fig.height=3, fig.width=9, message=FALSE, warning=FALSE}
+# Print the confusion matrix using kable
+kable(mult_mod_table, caption = "Multiple Linear Regression Model Predictions", align = "c") %>%
+  kable_styling(latex_options = c("HOLD_position"))  # Optional styling for the table
+
+
+kable(ordinal_prediction, caption = "Ordinal Model Predictions", align = "c") %>%
+  kable_styling(latex_options = c("HOLD_position"))  # Optional styling for the table
+```
+
+Notice that the predicted probabilities for the Neutral category are very similar for both models, and we would conclude that we do not have strong evidence that the proportional odds assumption is violated.
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Extracting unique values for Age, LogComp, RemoteWork, OrgSize, AISelect, and Age*LogComp
+unique_Age <- unique(cleaned_data_new$Age)
+
+unique_RemoteWork <- unique(cleaned_data_new$RemoteWork)
+unique_OrgSize <- unique(cleaned_data_new$OrgSize)
+unique_AISelect <- unique(cleaned_data_new$AISelect)
+
+# Printing unique values
+print(unique_Age)
+print(unique_RemoteWork)
+print(unique_OrgSize)
+print(unique_AISelect)
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Predict probabilities
+pred_probs <- predict(ord_model, type = "probs")
+
+# Classify into predicted categories
+pred_class <- apply(pred_probs, 1, which.max)
+
+# Create a confusion matrix
+conf_matrix <- table(cleaned_data_new$JobSatisfaction, pred_class)
+
+# Display the confusion matrix
+print("Confusion Matrix Ordinal Model")
+print(conf_matrix)
+
+# Calculate accuracy
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+print(paste("Accuracy:", round(accuracy, 3)))
+
+```
+
+We will now compare the accuracy of the predictions between the two models by using a confusion matrix for each of them:
+
+```{r, echo=FALSE, fig.height=3, fig.width=9, message=FALSE, warning=FALSE}
+library(knitr)
+
+# Create the confusion matrix data
+conf_matrix_ordinal <- matrix(c(13, 8593, 10, 15103, 3, 6576), ncol = 2, byrow = TRUE,
+                               dimnames = list(c("Not satisfied", "Neutral", "Satisfied"),
+                                               c("Not satisfied", "Neutral")))
+
+# Calculate accuracy
+accuracy_ordinal <- sum(diag(conf_matrix_ordinal)) / sum(conf_matrix_ordinal)
+
+# Print the confusion matrix using kable
+kable(conf_matrix_ordinal, caption = "Confusion Matrix Ordinal Model", align = "c") %>%
+  kable_styling(latex_options = c("HOLD_position"))  # Optional styling for the table
+
+# Print accuracy
+#cat("\nAccuracy:", round(accuracy_ordinal, 3))
+
+```
+
+As we can see in our ordinal model, we only obtained predictions for 2 classes (Not satisfied and Neutral) while we didn't have any for Satisfied, despite the original sample being well-balanced with 8,606 individuals in the Not satisfied group, 15,113 in the Neutral group, and 6,579 in the Satisfied group. This model shows an accuracy of 49.9%, suggesting that the model predicts job satisfaction as well as a coin flip. Surprisingly, despite having various factors, they don't aid us in predicting people's satisfaction levels.
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Predict probabilities
+pred_probs <- predict(mult_mod, type = "probs")
+
+# Classify into predicted categories
+pred_class <- apply(pred_probs, 1, which.max)
+
+# Create a confusion matrix
+conf_matrix <- table(cleaned_data_new$JobSatisfaction, pred_class)
+
+# Display the confusion matrix
+print("Confusion Matrix Multinomial Model")
+print(conf_matrix)
+
+# Calculate accuracy
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+print(paste("Accuracy:", round(accuracy, 3)))
+```
+
+```{r, echo=FALSE, fig.height=3, fig.width=9, message=FALSE, warning=FALSE}
+library(knitr)
+
+# Create the confusion matrix data
+conf_matrix_multinomial <- matrix(c(11, 8592, 3, 22, 15084, 7, 10, 6562, 7), ncol = 3, byrow = TRUE,
+                                  dimnames = list(c("Not satisfied", "Neutral", "Satisfied"),
+                                                  c("Not satisfied", "Neutral", "Satisfied")))
+
+# Calculate accuracy
+accuracy_multinomial <- sum(diag(conf_matrix_multinomial)) / sum(conf_matrix_multinomial)
+
+# Print the confusion matrix using kable
+kable(conf_matrix_multinomial, caption = "Confusion Matrix Multinomial Model", align = "c") %>%
+  kable_styling(latex_options = c("HOLD_position"))  # Optional styling for the table
+
+# Print accuracy
+#cat("\nAccuracy:", round(accuracy_multinomial, 3))
+
+```
+
+On the contrary, when we run the multinomial model, we can see that it is predicting the Satisfied class, albeit with very few values. The remarkable aspect is that despite this, this model has nearly the same accuracy (49.8%) as the ordinal model.
+
+## VII. Conclusion
+
+Our predictive model aimed to estimate a developer's yearly compensation demonstrates satisfactory accuracy in estimating developer compensation, as indicated by a commendable RMSE value of 1.097654. The model's strength lies in its inclusion of a wide range of variables, such as age, coding experience, and educational background, which collectively add depth to its predictive capacity. Notably, it features an interaction term between education level and years of coding experience, providing insights into how these factors jointly influence compensation.
+
+However, it also reveals areas of limitations requiring refinement before deployment. The model's use of categorical age brackets (e.g., 18-24, 25-34 years) rather than continuous numerical data limits its precision and could introduce biases. Additionally, the data is unbalanced across these categories, with fewer samples in older age groups, potentially skewing predictions. Another limitation is the handling of non-numeric data. The conversion of non-numeric entries in the 'professional programmer experience' variable to numerical values (e.g., 'less than 1 year' to 0.5 years) involves assumptions that may not accurately reflect the reality. Without clarification on the context behind these entries, there's a risk of introducing bias into the model. A low R-squared value of 0.14 suggests that the model does not fit the data very well. This could be due to several reasons, such as the model missing important explanatory variables, or the relationship between variables being non-linear while the model is linear.
+
+To enhance the accuracy and reliability of our developer compensation prediction model, future work should concentrate on improving data collection and processing. Key steps include adding more relevant variables and using a different type of model such as polynomial regressions or GAMs that captures the relationship between variables more effectively to better inform compensation. We should obtain numerical age data and ensure balanced age representation to address data skewness from underrepresented age groups. If only unbalanced categorical age data is available, we should consider methods like weighted regression or SMOTE for dataset balancing. Additionally, with clearer and more comprehensive data definition, we could revise the conversion of non-numeric data, like professional experience, into numerical values through a detailed scale or alternative techniques to further improve model precision and reduce bias.
+
+Our ordinal model observations indicated that 'Neutral' job satisfaction consistently had the highest predicted probability across diverse scenarios, irrespective of age or organization size.
+
+Although most of our results didn't yield significance in inferring their influence on an individual's job satisfaction, what we discovered is a discernible pattern: as organizational size increases, there is a corresponding increase in the likelihood of predicting job dissatisfaction. This observed trend suggests an inverse correlation between an organization's size and the levels of job satisfaction among its employees. These findings provide valuable insights into the potential impact of organizational size on job satisfaction, indicating the necessity for further investigation to gain a better understanding of the dynamics and underlying factors contributing to job satisfaction across various organizational scales.
+
+Another noteworthy aspect is that we can conclude that our model performs as well as a multiple linear regression model, thanks to the verification of the proportional odds assumption.
+
+The study faced various limitations, the models' inability to predict Job Satisfaction adequately indicated their limited predictive power despite incorporating multiple factors. Moving forward, there are opportunities for use more advanced machine learning models or exploration of new features that might enhance the prediction of Job Satisfaction, collecting more diverse data or additional features could better capture factors that affect job satisfaction.
+
+## VIII. Appendix
+
+*Appendix 1*
+
+Within the survey, there were 8 questions related to Job Satisfaction that measured how each person felt in their job.To each of the questions, we assigned a value from 1 to 5, considering 5 as the number that represented the highest satisfaction. For negatively phrased questions, the scale is reversed. We then computed the average across these questions for a unified job satisfaction score. The questions and scale are detailed below:
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(knitr)
+library(kableExtra)
+
+# Create data frame
+questions <- data.frame(
+  Questions = c(
+    "1) I have interactions with people outside of my immediate team.",
+    "2) Knowledge silos prevent me from getting ideas across the organization (i.e., one individual or team has information that isn't shared with others).",
+    "3) I can find up-to-date information within my organization to help me do my job.",
+    "4) I am able to quickly find answers to my questions with existing tools and resources.", 
+    "5) I know which system or resource to use to find information and answers to questions I have.",
+    "6) I often find myself answering questions that I've already answered before.",
+    "7) Waiting on answers to questions often causes interruptions and disrupts my workflow.",
+    "8) I feel like I have the tools and/or resources to quickly understand and work on any area of my company's code/system/platform."
+  ),
+  `Strongly disagree` = c(1, 5, 1, 1, 1, 5, 5, 1),
+  Disagree = c(2, 4, 2, 2, 2, 4, 4, 2),
+  `Neither agree nor disagree` = c(3, 3, 3, 3, 3, 3, 3, 3),
+  Agree = c(4, 2, 4, 4, 4, 2, 2, 4),
+  `Strongly agree` = c(5, 1, 5, 5, 5, 1, 1, 5)  
+)
+
+# Convert to kable
+table <- kable(questions, col.names = c("Questions", "Strongly disagree", "Disagree", "Neither agree nor disagree", "Agree", "Strongly agree"), 
+              format = "latex", booktabs = TRUE)
+
+# Simple styling  
+table %>%
+  add_header_above(c(" " = 1, "Job Satisfaction Survey" = 5)) %>%
+  kable_styling(latex_options = c("scale_down", "HOLD_position"), full_width = F)
+```
+
+For this variable, an average of 47,386 missing values exists per question, often because when a person did not answer one of the questions, they also did not answer the remaining 7 questions. We presume that this information is missing because this section of the survey was optional and some people chose not to answer it.
+
+*Appendix 2*
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=8, fig.height=3}
+# Set up the plotting area for two plots side by side
+par(mfrow=c(1,2))  # 1 row, 2 columns
+
+plot(log_model_interaction, which=1)
+
+plot(log_model_interaction, which=2)
+```
+
+*Appendix 3*
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=8, fig.height=3}
+# Set up the plotting area for two plots side by side
+par(mfrow=c(1,2))  # 1 row, 2 columns
+
+plot(log_model_interaction_without_cooks, which=3)
+
+plot(log_model_interaction_without_cooks, which=5)
+```
+
+*Appendix 4*
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=8, fig.height=3}
+library(sjPlot)
+# Renaming the variables
+final_data_linear <- data_without_cooks_for_log_interaction %>%
+  rename(
+    `Converted Yearly Compensation` = ConvertedCompYearly,
+    `Age` = Age,
+    `Number of Coding Languages` = CodingLanguageNum,
+    `Remote Work Status` = RemoteWork,
+    `Years of Work Experience` = WorkExp,
+    `Education Level` = EdLevel,
+    `Years of Professional Coding` = YearsCodePro
+  )
+
+# Fitting the linear regression model with the new variable names
+log_model_interaction_renamed <- lm(log(`Converted Yearly Compensation`) ~ `Age` + `Number of Coding Languages` + `Remote Work Status` + `Years of Work Experience` + `Education Level` * `Years of Professional Coding`, data = final_data_linear)
+
+# Printing the summary of the regression model
+tab_model(log_model_interaction_renamed)
+```
+
+*Appendix 5*
+
+**Relationship between Years of Coding Experience and Converted Yearly Compensation**
+
+Generally, as coding experience increases, converted yearly compensation also rises across all age groups. However, this trend is not observed in individuals under 18 years old; For every category of work type, there's a noticeable increase in the converted yearly compensation as years of coding experience grow; A consistent rise in converted yearly compensation is seen across all education levels as coding experience advances.
+
+```{r, echo=FALSE, fig.height=3, fig.width=9, message=FALSE, warning=FALSE}
+# Using Age as color line
+ggplot(new_data, aes(x = YearsCodePro, y = log(ConvertedCompYearly), col= Age)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Years of Coding Experience",
+       x = "Years of Coding Experience (excluding education)",
+       y = "Converted Yearly Compensation",
+       color = "Age") 
+```
+
+```{r, echo=FALSE, results='hide', message=FALSE, warning=FALSE, fig.show='hide'}
+# Using RemoteWork as color line
+ggplot(new_data, aes(x = YearsCodePro, y = log(ConvertedCompYearly), col = RemoteWork)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Years of Coding Experience",
+       x = "Years of Coding Experience (excluding education)",
+       y = "Converted Yearly Compensation",
+       color = "Remote Work") 
+
+# Using EdLevel as color line
+ggplot(new_data, aes(x = YearsCodePro, y = log(ConvertedCompYearly), col = EdLevel)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Years of Coding Experience",
+       x = "Years of Coding Experience (excluding education)",
+       y = "Converted Yearly Compensation",
+       color = "Education Level") 
+```
+
+*Appendix 6*
+
+**Relationship between Number of Coding Languages and Converted Yearly Compensation**
+
+Generally, as the number of coding languages known increases, converted yearly compensation also rises across most age groups. However, this trend is not observed in individuals under 18 years old and for individual's who prefer not to say; For every category of work type, there's a noticeable increase in the converted yearly compensation as the number of coding languages known grows; A consistent rise in converted yearly compensation is seen across most education levels as the number of coding languages known increases. However, this trend is not observed in individuals who have only primary/elementary school degree and those individuals with something else degree.
+
+```{r, echo=FALSE, fig.height=2.7, fig.width=8, message=FALSE, warning=FALSE}
+
+# Using EdLevel as color line
+ggplot(new_data, aes(x = CodingLanguageNum, y = log(ConvertedCompYearly), col = EdLevel)) +
+  geom_point() + 
+  geom_smooth(method = "lm", se = F) +
+  labs(title = "Yearly Compensation vs Number of Coding Languages",
+       x = "Number of Coding Languages",
+       y = "Converted Yearly Compensation",
+       color = "Education Level") 
+```
+
+## IX. References
+
+Stack Overflow. (2023). Stack Overflow Developer Survey 2023. Retrieved from https://insights.stackoverflow.com/survey

@@ -8,7 +8,7 @@ This project analyses the 2023 Stack Overflow survey data, featuring responses f
 - **Job Satisfaction Analysis**: Employ ordinal regression to understand the determinants of job satisfaction among software engineers.
 
 ## Data Source
-- **Survey Dataset**: 2023 Stack Overflow Survey.
+- **Survey Dataset**: [2023 Stack Overflow Survey](https://insights.stackoverflow.com/survey)
 - **Respondents**: 89,184 software engineers.
 - **Geographic Scope**: 185 countries.
 

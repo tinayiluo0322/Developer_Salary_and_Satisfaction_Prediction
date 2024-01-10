@@ -31,6 +31,9 @@ This project analyses the 2023 Stack Overflow survey data, featuring responses f
 ## Conclusion
 The analysis underscores the significance of organizational size in determining job satisfaction levels among software engineers. Additionally, the compensation prediction model provides valuable insights into salary determinants in the tech industry.
 
-## Project Contributers
-Jiayi Zhou
-Annie (Xueqing) Wu
+## Project Contributors
+Faraz Jawed
+
+Keon Nartey
+
+Shaila Guereca Guzman

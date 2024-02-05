@@ -1,5 +1,8 @@
 # 2023 Stack Overflow Survey Data Analysis
 
+## Demo Video
+[Developer Salary and Satisfaction Prediction - 2023 Stack Overflow Survey Data Analysis](https://youtu.be/wE5Pr5ISRjA)
+
 ## Overview
 This project analyses the 2023 Stack Overflow survey data, featuring responses from 89,184 software engineers across 185 countries. The primary objectives are to predict developer compensation and explore factors influencing job satisfaction.
 
